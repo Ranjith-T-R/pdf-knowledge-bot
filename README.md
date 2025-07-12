@@ -1,4 +1,4 @@
-# pdf Knowledge Bot – Chat with Your PDFs
+# PDF Knowledge Bot – Chat with Your PDFs
 
 **Knowledge Bot** is an AI-powered PDF question-answering system that allows users to **chat with uploaded documents** using a combination of OCR, text parsing, vector search, and large language models. It’s built with **LangChain’s Retrieval-Augmented Generation (RAG)** framework and powered by **Google Gemini** for real-time, intelligent responses.
 
@@ -17,7 +17,7 @@ Knowledge Bot enables users to query complex documents such as scanned PDFs, mul
 
 ---
 
-##  Features
+##  Features:
 
 -  Upload multiple PDFs via Streamlit sidebar  
 -  Automatically extract and chunk content using PyPDF2 and OCR  
@@ -28,7 +28,7 @@ Knowledge Bot enables users to query complex documents such as scanned PDFs, mul
 
 ---
 
-## Tech Stack
+## Tech Stack:
 
 | Layer               | Technology                          |
 |--------------------|--------------------------------------|
@@ -42,7 +42,7 @@ Knowledge Bot enables users to query complex documents such as scanned PDFs, mul
 
 ---
 
-##  Limitations
+##  Limitations:
 
 ### 1. Upload Size Limit  
 - Maximum total upload size is **200 MB**, due to Streamlit's file uploader limitations.  
@@ -66,35 +66,41 @@ Knowledge Bot enables users to query complex documents such as scanned PDFs, mul
   - Re-uploading files is required for new sessions
 
   
-## ⚙️ Setup Instructions
+##  Setup and Step by Step Instructions:
 
-### 6.1 Clone the Repository
+### Clone the Repository: 
 
 ```bash
 https://github.com/Ranjith-T-R/pdf-knowledge-bot.git
 cd knowledge-bot
 ---
 
-### Install Dependencies
+Install Dependencies:
+
 Create and activate a virtual environment (optional but recommended):
 
 python -m venv venv :
 
 venv\Scripts\activate  # Windows
-# OR
-source venv/bin/activate  # macOS/Linux
 
 Then install the required packages:
 
 pip install -r requirements.txt
 
-Create .env File
+Create .env File:
 
 In the root directory, create a .env file with your Google GenAI API key:
 Refer Support Docs for key,
 
 GOOGLE_API_KEY=your_google_genai_api_key
 
-Run the App
+Run the App:
 
 streamlit run app.py
+
+Additional System Requirements (not installable via pip):
+
+You must install these on your system (outside Python)
+1.Poppler (windows)
+2.Tesseract (Windows)
+refer support docs for guide 
