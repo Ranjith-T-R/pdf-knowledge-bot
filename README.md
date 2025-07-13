@@ -8,7 +8,7 @@
 
 Knowledge Bot enables users to query complex documents such as scanned PDFs, multi-page manuals, reports, or handbooks. It combines:
 
-- **OCR (Tesseract)** – To extract text from scanned/image-based PDFs  
+- **OCR (Tesseract)** – (when needed) To extract text from scanned/image-based PDFs  
 - **PDF parsing (PyPDF2)** – To extract structured text  
 - **Vector Search (FAISS)** – For semantic retrieval  
 - **LLM (Gemini 1.5 Flash)** – For context-aware natural language responses  
