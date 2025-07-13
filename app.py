@@ -1,6 +1,11 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Knowledge Bot 
 # A Streamlit app to chat with your PDFs using RAG and OCR support.
+=======
+# knowledge Bot
+# Import necessary libraries
+>>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
 =======
 # knowledge Bot
 # Import necessary libraries
@@ -11,9 +16,12 @@ from PyPDF2 import PdfReader
 from pdf2image import convert_from_path
 import pytesseract
 <<<<<<< HEAD
+<<<<<<< HEAD
 import tempfile
 import os
 import gc
+=======
+>>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
 =======
 >>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
 from langchain.schema import Document
@@ -22,6 +30,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import RetrievalQA
 from langchain_google_genai import ChatGoogleGenerativeAI
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 # Load environment variables
@@ -44,6 +53,8 @@ def load_docs(uploaded_files, enable_ocr=True):
             tmp_file_path = tmp_file.name 
 
 =======
+=======
+>>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
 import tempfile
 import os
 
@@ -62,6 +73,9 @@ def load_docs(uploaded_files):
             tmp_file_path = tmp_file.name
 
         # Extract text
+<<<<<<< HEAD
+>>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
+=======
 >>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
         text_content = ""
         try:
@@ -69,6 +83,7 @@ def load_docs(uploaded_files):
             for page in reader.pages:
                 text_content += page.extract_text() or ""
         except Exception as e:
+<<<<<<< HEAD
 <<<<<<< HEAD
             st.error(f"Text extraction failed: {e}")
 
@@ -127,6 +142,8 @@ def main():
         load_btn = st.button(" Load PDFs") #load button
 
 =======
+=======
+>>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
             print("Text extraction error:", e)
 
         # OCR
@@ -182,11 +199,15 @@ def main():
         load_btn = st.button("Load PDFs")
 
     # Handle PDF Loading
+<<<<<<< HEAD
+>>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
+=======
 >>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
     if load_btn:
         if not uploaded_files:
             st.warning("Please upload at least one PDF file.")
         else:
+<<<<<<< HEAD
 <<<<<<< HEAD
             with st.spinner("Processing documents..."):
                 raw_docs = load_docs(uploaded_files, enable_ocr=enable_ocr) # Load and process the uploaded PDFs
@@ -211,6 +232,8 @@ def main():
 
 # Run app
 =======
+=======
+>>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
             with st.spinner("Processing uploaded PDFs..."):
                 raw_docs = load_docs(uploaded_files)
                 split_docs = split_documents(raw_docs)
@@ -233,6 +256,9 @@ def main():
 
 
 # Entry point
+<<<<<<< HEAD
+>>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
+=======
 >>>>>>> 35e341442d668bf97ee58ffe6a2e7efdfc7e1611
 if __name__ == "__main__":
     main()
