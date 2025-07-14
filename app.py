@@ -122,6 +122,7 @@ def main():
     else:
         st.info("Upload your documents and click **Load PDFs** to start chatting.")
 
+
 # Run app
 if __name__ == "__main__":
     main()
