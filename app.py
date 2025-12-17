@@ -3,6 +3,7 @@
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
+from PIL import Image
 from pdf2image import convert_from_path
 import pytesseract
 import tempfile
@@ -14,6 +15,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import RetrievalQA
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.prompts import PromptTemplate
 
 # Load environment variables
 load_dotenv()
@@ -21,50 +23,87 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     raise ValueError("Please enter GOOGLE_API_KEY in your .env file.")
 
+# Extract image text
+def extract_text_from_image_file(uploaded_file):
+    text = ""
+    try:
+        uploaded_file.seek(0)
+        image = Image.open(uploaded_file)
+        text = pytesseract.image_to_string(image)
+    except Exception as e:
+        st.error(f"Image OCR failed for {uploaded_file.name}: {e}")
+    return text.strip()
+    
 # Embedding Model (cached for performance)
 @st.cache_resource(show_spinner=False)
 def get_embeddings():
     return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")  # huggingface embedding model
 
 # Load and process PDFs
-def load_docs(uploaded_files, enable_ocr=True): # Enable OCR for scanned PDFs
+def load_docs(uploaded_files, enable_ocr=True):
     docs = []
+
     for uploaded_file in uploaded_files:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file: # Create a temporary file
-            tmp_file.write(uploaded_file.read()) 
-            tmp_file_path = tmp_file.name  
+        file_name = uploaded_file.name
+        file_ext = file_name.split(".")[-1].lower()
 
-        text_content = ""
-        try:
-            reader = PdfReader(tmp_file_path)
-            for page in reader.pages:
-                text_content += page.extract_text() or ""
-        except Exception as e:
-            st.error(f"Text extraction failed: {e}") 
+        # -------------------- PDF --------------------
+        if file_ext == "pdf":
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                uploaded_file.seek(0)
+                tmp_file.write(uploaded_file.read())
+                tmp_file_path = tmp_file.name
 
-        ocr_text = ""
-        if enable_ocr:
+            text_content = ""
             try:
-                images = convert_from_path(tmp_file_path)
-                for img in images:
-                    ocr_text += pytesseract.image_to_string(img)
-                    del img 
-                del images 
-                gc.collect() # Clean up memory
+                reader = PdfReader(tmp_file_path)
+                for page in reader.pages:
+                    text_content += page.extract_text() or ""
             except Exception as e:
-                st.error(f"OCR failed for {uploaded_file.name}: {e}") # Handle OCR errors
+                st.error(f"PDF text extraction failed: {e}")
 
-        full_text = text_content + "\n" + ocr_text # Combine text and OCR results
-        doc = Document(page_content=full_text.strip(), metadata={"source": uploaded_file.name})
-        docs.append(doc) 
+            ocr_text = ""
+            if enable_ocr:
+                try:
+                    images = convert_from_path(tmp_file_path)
+                    for img in images:
+                        ocr_text += pytesseract.image_to_string(img)
+                        del img
+                    del images
+                    gc.collect()
+                except Exception as e:
+                    st.error(f"OCR failed for {file_name}: {e}")
 
-        os.unlink(tmp_file_path)  # Clean temp file
+            full_text = text_content + "\n" + ocr_text
+            os.unlink(tmp_file_path)
+
+        # -------------------- IMAGE --------------------
+        elif file_ext in ["png", "jpg", "jpeg"]:
+            full_text = extract_text_from_image_file(uploaded_file)
+
+        else:
+            st.warning(f"Unsupported file type: {file_name}")
+            continue
+
+        if not full_text.strip():
+            st.warning(f"No text found in {file_name}")
+            continue
+
+        doc = Document(
+            page_content=full_text.strip(),
+            metadata={"source": file_name}
+        )
+        docs.append(doc)
 
     return docs
 
 # Split large documents into chunks
-def split_documents(docs, chunk_size=1000, overlap=200): # Adjust chunk size and overlap as needed
-    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap)
+def split_documents(docs, chunk_size=800, overlap=150):
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=overlap,
+        separators=["\n\n", "\n", ".", " ", ""]
+    )
     return splitter.split_documents(docs)
 
 # Embed documents and build vectorstore
@@ -82,18 +121,41 @@ def get_llm():
 
 # Create QA chain
 def build_qa_chain(vectorstore):
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 4}) # Adjust k for more or fewer results
-    llm = get_llm() # Load the LLM
-    return RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
+    prompt = PromptTemplate(
+        template="""
+Use ONLY the following context to answer the question.
+If the answer is not present, say:
+"I couldn’t find that information in the uploaded documents."
+
+Context:
+{context}
+
+Question:
+{question}
+
+Answer:
+""",
+        input_variables=["context", "question"]
+    )
+
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+    llm = get_llm()
+
+    return RetrievalQA.from_chain_type(
+        llm=llm,
+        retriever=retriever,
+        chain_type="stuff",
+        chain_type_kwargs={"prompt": prompt}
+    )
 
 # Main Streamlit App
 def main():
     st.set_page_config(page_title="Knowledge Bot", layout="wide")
-    st.title(" Chat with Your PDFs with RAG and OCR Support") # Title of the app
+    st.title("Chat with Your PDFs & Images") # Title of the app
 
     with st.sidebar:
-        st.header("Upload PDFs")
-        uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
+        st.header("Upload PDFs or Images")
+        uploaded_files = st.file_uploader("Choose PDF or Image files", type=["pdf", "png", "jpg", "jpeg"],accept_multiple_files=True)
         enable_ocr = st.checkbox("Enable OCR for scanned PDFs", value=True) # Checkbox for OCR support
         load_btn = st.button(" Load PDFs") # Button to load PDFs
 
@@ -102,11 +164,17 @@ def main():
             st.warning("Please upload at least one PDF file.")
         else:
             with st.spinner("Processing documents..."):
-                raw_docs = load_docs(uploaded_files, enable_ocr=enable_ocr) # Load and process documents
-                split_docs = split_documents(raw_docs) # Split documents  chunks
-                vectorstore = embed_chunks(split_docs) # Embed the split documents
+                raw_docs = load_docs(uploaded_files, enable_ocr=enable_ocr)
+            
+                if not raw_docs:
+                    st.error("No readable text found in uploaded files.")
+                    return
+            
+                split_docs = split_documents(raw_docs)
+                vectorstore = embed_chunks(split_docs)
                 st.session_state.qa_chain = build_qa_chain(vectorstore)
-            st.success(" Documents are processed and ready for Q&A!")
+            
+            st.success("Documents are processed and ready for Q&A!")
 
     # Chat interface
     if "qa_chain" in st.session_state:
@@ -121,7 +189,6 @@ def main():
                 st.chat_message("assistant").markdown(response)
     else:
         st.info("Upload your documents and click **Load PDFs** to start chatting.")
-
 
 # Run app
 if __name__ == "__main__":
