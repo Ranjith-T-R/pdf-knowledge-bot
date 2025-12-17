@@ -3,8 +3,12 @@ python-dotenv
 PyPDF2
 pdf2image
 pytesseract
+Pillow
 langchain
-faiss-cpu  
-transformers  
 langchain-google-genai
 google-generativeai
+faiss-cpu
+sentence-transformers
+transformers
+torch
+tqdm
